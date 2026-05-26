@@ -1,0 +1,257 @@
+/* ========== GLOBAL RESET – NO LEAKING STYLES ========== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  overflow-x: hidden;
+  height: auto;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: #f9fafb;
+  color: #111827;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+#__next {
+  overflow: visible;
+  position: static;
+  min-height: 100vh;
+}
+
+/* Dashboard container – ensures no external interference */
+.dashboard-layout {
+  overflow: visible;
+}
+
+/* ========== THEME VARIABLES (LIGHT DEFAULT) ========== */
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --bg-tertiary: #f3f4f6;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #6b7280;
+  --border-light: #e5e7eb;
+  --border-medium: #d1d5db;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  --card-shadow-hover: 0 4px 12px rgba(0,0,0,0.1);
+  --accent-color: #f59e0b;
+  --accent-hover: #d97706;
+  --success: #10b981;
+  --danger: #dc2626;
+  --warning: #f59e0b;
+  --info: #3b82f6;
+  --sidebar-bg: #132c49;
+  --sidebar-text: #e2e8f0;
+  --header-bg: #ffffff;
+}
+
+/* ========== DARK THEME ========== */
+[data-theme="dark"] {
+  --bg-primary: #1a1a2e;
+  --bg-secondary: #16213e;
+  --bg-tertiary: #0f172a;
+  --text-primary: #e2e8f0;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --border-light: #2d3748;
+  --border-medium: #3f4e6b;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  --card-shadow-hover: 0 4px 12px rgba(0,0,0,0.4);
+  --header-bg: #0f172a;
+}
+
+body {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* ========== COMPACT MODE ========== */
+body.compact-mode .card,
+body.compact-mode .dashboard-card,
+body.compact-mode .form-group,
+body.compact-mode .table td,
+body.compact-mode .table th,
+body.compact-mode .modal-content {
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+}
+
+body.compact-mode .card-header,
+body.compact-mode .card-footer {
+  padding: 0.5rem;
+}
+
+body.compact-mode .form-control {
+  padding: 0.25rem 0.5rem;
+}
+
+/* ========== UTILITY CLASSES ========== */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-1 { gap: 0.25rem; }
+.gap-2 { gap: 0.5rem; }
+.gap-4 { gap: 1rem; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.w-full { width: 100%; }
+
+/* ========== CARD STYLES ========== */
+.card {
+  background: var(--bg-primary);
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+  padding: 1rem;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.card:hover {
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.card-footer {
+  border-top: 1px solid var(--border-light);
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+/* ========== FORM ELEMENTS ========== */
+input, select, textarea {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-medium);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  transition: border 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(245,158,11,0.2);
+}
+
+label {
+  font-weight: 500;
+  margin-bottom: 4px;
+  display: inline-block;
+}
+
+/* ========== BUTTONS ========== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s;
+}
+
+.btn-primary {
+  background: var(--accent-color);
+  color: #1f2937;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: white;
+}
+
+/* ========== TABLES ========== */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-primary);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table th,
+.table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-light);
+  text-align: left;
+}
+
+.table th {
+  background: var(--bg-tertiary);
+  font-weight: 600;
+}
+
+/* ========== DASHBOARD SPECIFIC ========== */
+.dashboard-card {
+  background: var(--bg-primary);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: var(--card-shadow);
+}
+
+.kpi-value {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: var(--accent-color);
+}
+
+/* ========== SIDEBAR (light/dark aware) ========== */
+.sidebar {
+  background-color: var(--sidebar-bg);
+  color: var(--sidebar-text);
+}
+
+.sidebar a {
+  color: var(--sidebar-text);
+}
+
+.sidebar a:hover,
+.sidebar .active {
+  background-color: #1e3a5f;
+  color: var(--accent-color);
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .table th, .table td {
+    padding: 8px;
+  }
+  .kpi-value {
+    font-size: 1.2rem;
+  }
+  .card {
+    padding: 0.75rem;
+  }
+}

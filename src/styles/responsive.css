@@ -1,0 +1,51 @@
+/* ========== RESPONSIVE OVERRIDES – ONLY FOR PUBLIC WEBSITE ========== */
+/* These selectors target elements that exist ONLY on public pages */
+@media (max-width: 768px) {
+  .public-header,
+  .public-header * {
+    /* Fix for mobile header – but not affecting dashboard */
+  }
+  
+  .hero-section,
+  .hero-slider,
+  .carousel-container {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+  }
+
+  h1, .hero-heading {
+    font-size: clamp(2rem, 6vw, 3.5rem);
+  }
+
+  .hero-content p {
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+
+  .slider-arrow,
+  .arrow-left,
+  .arrow-right {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+
+  .cards-grid,
+  .services-grid,
+  .products-grid,
+  .gallery-grid,
+  .products-preview-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+    text-align: center;
+    gap: 1.5rem;
+  }
+
+  body, html {
+    overflow-x: hidden;
+  }
+}

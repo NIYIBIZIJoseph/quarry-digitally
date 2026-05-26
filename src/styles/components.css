@@ -1,0 +1,38 @@
+/* ========== 4. src/styles/components.css ========== */
+/* Reusable UI components (optional – can be expanded) */
+.container {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.card {
+  background: white;
+  border-radius: var(--border-radius-xl, 12px);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-6, 1.5rem);
+}
+
+.btn-primary {
+  background-color: var(--color-primary, #f59e0b);
+  color: #0b1c34;
+  border: none;
+  padding: 0.5rem 1.2rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: inline-block;
+  text-align: center;
+}
+.btn-primary:hover {
+  background-color: var(--color-primary-dark, #e67e22);
+}
+
+.grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
