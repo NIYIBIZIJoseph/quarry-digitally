@@ -1,247 +1,290 @@
 import { useEffect, useState } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
 import { getAuthHeaders } from '@/lib/auth-client';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faChartLine, faMoneyBillWave, faBoxes, faUsers,
-  faCheckCircle, faTimesCircle, faExclamationTriangle, faUmbrellaBeach,
-  faTruck, faClock, faChartSimple, faEye, faUserCheck
+  faChartLine, faCalendarAlt, faSync, faChartBar, 
+  faChartPie, faChartSimple, faSave, faDatabase,
+  faChartArea, faRefresh, faClock, faSlidersH
 } from '@fortawesome/free-solid-svg-icons';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  PointElement,
-  LineElement,
-  Filler, // ✅ Added Filler plugin
-} from 'chart.js';
-import { Bar, Line } from 'react-chartjs-2';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ROLES } from "@/lib/roles";
 
-// ✅ Register Filler plugin
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, PointElement, LineElement, Filler);
+interface Config {
+  key: string;
+  value: string;
+  description: string;
+}
 
-export default function Analytics() {
+export default function AnalyticsConfigSettings() {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState('operational');
-  const [operational, setOperational] = useState<any>(null);
-  const [financial, setFinancial] = useState<any>(null);
-  const [inventory, setInventory] = useState<any>(null);
-  const [workforce, setWorkforce] = useState<any>(null);
+  const [configs, setConfigs] = useState<Config[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+
+  const userRole = typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('user') || '{}').role) : null;
+  const canEdit = userRole === ROLES.SUPERADMIN;
+
+  const fetchConfigs = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/settings/analytics-config', { headers: getAuthHeaders() });
+      if (!res.ok) throw new Error('Failed to fetch analytics config');
+      let data = await res.json();
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        if (data.data && Array.isArray(data.data)) data = data.data;
+        else if (data.success && Array.isArray(data.data)) data = data.data;
+        else data = [];
+      }
+      if (!Array.isArray(data)) data = [];
+      setConfigs(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchAll = async () => {
-      const headers = getAuthHeaders();
-      try {
-        const [op, fin, inv, wf] = await Promise.all([
-          fetch('/api/analytics/operational', { headers }).then(res => res.json()).catch(() => ({})),
-          fetch('/api/analytics/financial', { headers }).then(res => res.json()).catch(() => ({})),
-          fetch('/api/analytics/inventory', { headers }).then(res => res.json()).catch(() => ({})),
-          fetch('/api/analytics/workforce', { headers }).then(res => res.json()).catch(() => ({})),
-        ]);
-        setOperational(op);
-        setFinancial(fin);
-        setInventory(inv);
-        setWorkforce(wf);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAll();
+    fetchConfigs();
   }, []);
 
-  if (loading) return <DashboardLayout>{t('loadingAnalytics') || 'Loading analytics...'}</DashboardLayout>;
-
-  const lineChartData = (labels: string[], data: number[], label: string, color = '#f59e0b') => ({
-    labels,
-    datasets: [{ label, data, borderColor: color, backgroundColor: 'rgba(245,158,11,0.1)', tension: 0.3, fill: true }],
-  });
-  const barChartData = (labels: string[], data: number[], label: string, color = '#f59e0b') => ({
-    labels,
-    datasets: [{ label, data, backgroundColor: color, borderRadius: 6 }],
-  });
-
-  const renderOperational = () => {
-    if (!operational || !operational.todayStats) return <p>{t('noOperationalData') || 'No operational data'}</p>;
-    const { todayStats, attendanceTrend, workerRanking } = operational;
-    return (
-      <div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px,1fr))', gap: '1rem', marginBottom: '2rem' }}>
-          <div style={{ background: 'white', padding: '1rem', borderRadius: '12px' }}>
-            <FontAwesomeIcon icon={faUsers} /> {t('totalWorkers') || 'Total Workers'}<br/><b>{todayStats.total_workers}</b>
-          </div>
-          <div style={{ background: '#d1fae5', padding: '1rem', borderRadius: '12px' }}>
-            <FontAwesomeIcon icon={faCheckCircle} /> {t('presentToday') || 'Present Today'}<br/><b>{todayStats.present}</b>
-          </div>
-          <div style={{ background: '#fee2e2', padding: '1rem', borderRadius: '12px' }}>
-            <FontAwesomeIcon icon={faTimesCircle} /> {t('absent') || 'Absent'}<br/><b>{todayStats.absent}</b>
-          </div>
-          <div style={{ background: '#fef3c7', padding: '1rem', borderRadius: '12px' }}>
-            <FontAwesomeIcon icon={faExclamationTriangle} /> {t('late') || 'Late'}<br/><b>{todayStats.late}</b>
-          </div>
-          <div style={{ background: '#e0e7ff', padding: '1rem', borderRadius: '12px' }}>
-            <FontAwesomeIcon icon={faUmbrellaBeach} /> {t('onLeave') || 'On Leave'}<br/><b>{todayStats.on_leave}</b>
-          </div>
-        </div>
-        {attendanceTrend && attendanceTrend.length > 0 && (
-          <div style={{ background: 'white', padding: '1rem', borderRadius: '12px', marginBottom: '2rem' }}>
-            <h3><FontAwesomeIcon icon={faChartLine} /> {t('attendanceTrend') || 'Attendance Trend (Last 7 days)'}</h3>
-            <Line data={{
-              labels: attendanceTrend.map((d: any) => new Date(d.date).toLocaleDateString()),
-              datasets: [
-                { label: t('present') || 'Present', data: attendanceTrend.map((d: any) => d.present), borderColor: '#10b981', fill: false },
-                { label: t('late') || 'Late', data: attendanceTrend.map((d: any) => d.late), borderColor: '#f59e0b', fill: false },
-                { label: t('absent') || 'Absent', data: attendanceTrend.map((d: any) => d.absent), borderColor: '#ef4444', fill: false },
-              ],
-            }} />
-          </div>
-        )}
-        {workerRanking && workerRanking.length > 0 && (
-          <div style={{ background: 'white', padding: '1rem', borderRadius: '12px' }}>
-            <h3><FontAwesomeIcon icon={faUserCheck} /> {t('topReliableWorkers') || 'Top 5 Most Reliable Workers (Last 30 days)'}</h3>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr><th>{t('worker') || 'Worker'}</th><th>{t('present') || 'Present'}</th><th>{t('late') || 'Late'}</th><th>{t('totalDays') || 'Total Days'}</th></tr>
-              </thead>
-              <tbody>
-                {workerRanking.slice(0,5).map((w: any) => (
-                  <tr key={w.name} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                    <td>{w.name}</td><td style={{ padding: '8px' }}>{w.present_days}</td><td style={{ padding: '8px' }}>{w.late_days}</td><td style={{ padding: '8px' }}>{w.total_days}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    );
+  const updateConfig = async (key: string, value: string) => {
+    if (!canEdit) return;
+    setSaving(true);
+    try {
+      const res = await fetch('/api/settings/analytics-config', {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ key, value }),
+      });
+      if (!res.ok) throw new Error('Update failed');
+      setConfigs(prev => prev.map(c => c.key === key ? { ...c, value } : c));
+      setMessage(`${key} updated successfully`);
+      setTimeout(() => setMessage(''), 3000);
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const renderFinancial = () => {
-    if (!financial) return <p>{t('noFinancialData') || 'No financial data'}</p>;
-    const { revenueDaily, topProducts } = financial;
-    const totalRevenue = revenueDaily?.reduce((sum: number, r: any) => sum + Number(r.revenue), 0) || 0;
-    return (
-      <div>
-        <div style={{ background: 'white', padding: '1rem', borderRadius: '12px', marginBottom: '2rem', textAlign: 'center', borderTop: '4px solid #f59e0b' }}>
-          <FontAwesomeIcon icon={faMoneyBillWave} size="2x" style={{ color: '#f59e0b' }} />
-          <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>{t('totalRevenueLast30') || 'Total Revenue (Last 30 days)'}</div>
-          <div style={{ fontSize: '2rem', fontWeight: 'bold' }}>{totalRevenue.toLocaleString()} RWF</div>
-        </div>
-        {revenueDaily && revenueDaily.length > 0 && (
-          <div style={{ background: 'white', padding: '1rem', borderRadius: '12px', marginBottom: '2rem' }}>
-            <h3><FontAwesomeIcon icon={faChartLine} /> {t('revenueTrend') || 'Revenue Trend (Last 30 days)'}</h3>
-            <Line data={lineChartData(revenueDaily.map((r: any) => r.date), revenueDaily.map((r: any) => r.revenue), t('revenue') || 'Revenue (RWF)')} />
-          </div>
-        )}
-        {topProducts && topProducts.length > 0 && (
-          <div style={{ background: 'white', padding: '1rem', borderRadius: '12px' }}>
-            <h3><FontAwesomeIcon icon={faChartSimple} /> {t('topSellingProducts') || 'Top Selling Products (by revenue)'}</h3>
-            <Bar data={barChartData(topProducts.map((p: any) => p.name), topProducts.map((p: any) => p.revenue), t('revenue') || 'Revenue (RWF)')} />
-          </div>
-        )}
-      </div>
-    );
+  const getValue = (key: string) => {
+    if (!Array.isArray(configs)) return '';
+    const config = configs.find(c => c.key === key);
+    return config?.value || '';
   };
 
-  const renderInventory = () => {
-    if (!inventory) return <p>{t('noInventoryData') || 'No inventory data'}</p>;
-    const { fastMoving, slowMoving, deadStock, turnoverRate, productSales } = inventory;
-    return (
-      <div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px,1fr))', gap: '1rem', marginBottom: '2rem' }}>
-          <div style={{ background: '#d1fae5', padding: '1rem', borderRadius: '12px' }}>
-            <FontAwesomeIcon icon={faTruck} /> {t('fastMoving') || 'Fast-Moving'}<br/><b>{fastMoving}</b>
-          </div>
-          <div style={{ background: '#fef3c7', padding: '1rem', borderRadius: '12px' }}>
-            <FontAwesomeIcon icon={faClock} /> {t('slowMoving') || 'Slow-Moving'}<br/><b>{slowMoving}</b>
-          </div>
-          <div style={{ background: '#fee2e2', padding: '1rem', borderRadius: '12px' }}>
-            <FontAwesomeIcon icon={faTimesCircle} /> {t('deadStock') || 'Dead Stock'}<br/><b>{deadStock}</b>
-          </div>
-          <div style={{ background: 'white', padding: '1rem', borderRadius: '12px' }}>
-            <FontAwesomeIcon icon={faChartSimple} /> {t('turnoverRate') || 'Turnover Rate'}<br/><b>{turnoverRate?.toFixed(2)}</b>
-          </div>
-        </div>
-        {productSales && productSales.length > 0 && (
-          <div style={{ background: 'white', padding: '1rem', borderRadius: '12px' }}>
-            <h3><FontAwesomeIcon icon={faBoxes} /> {t('productSales') || 'Product Sales (Last 30 days)'}</h3>
-            <Bar data={barChartData(productSales.map((p: any) => p.name), productSales.map((p: any) => p.sold_units), t('unitsSold') || 'Units Sold', '#3b82f6')} />
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const renderWorkforce = () => {
-    if (!workforce) return <p>{t('noWorkforceData') || 'No workforce data'}</p>;
-    const { topReliable, mostLate, mostAbsent } = workforce;
-    return (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px,1fr))', gap: '1rem' }}>
-        <div style={{ background: 'white', padding: '1rem', borderRadius: '12px' }}>
-          <h3><FontAwesomeIcon icon={faUserCheck} /> {t('topReliableWorkers') || 'Top 5 Most Reliable'}</h3>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {topReliable?.map((w: any) => <li key={w.name} style={{ padding: '4px 0' }}>{w.name} – {w.present} {t('presentDays') || 'present days'}</li>)}
-          </ul>
-        </div>
-        <div style={{ background: '#fef3c7', padding: '1rem', borderRadius: '12px' }}>
-          <h3><FontAwesomeIcon icon={faExclamationTriangle} /> {t('mostLateArrivals') || 'Most Late Arrivals'}</h3>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {mostLate?.map((w: any) => <li key={w.name} style={{ padding: '4px 0' }}>{w.name} – {w.late_count} {t('lateDays') || 'late days'}</li>)}
-          </ul>
-        </div>
-        <div style={{ background: '#fee2e2', padding: '1rem', borderRadius: '12px' }}>
-          <h3><FontAwesomeIcon icon={faTimesCircle} /> {t('mostAbsentWorkers') || 'Most Absent Workers'}</h3>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {mostAbsent?.map((w: any) => <li key={w.name} style={{ padding: '4px 0' }}>{w.name} – {w.absent_count} {t('absentDays') || 'absent days'}</li>)}
-          </ul>
-        </div>
-      </div>
-    );
-  };
+  if (loading) return <div style={{ padding: '1rem', textAlign: 'center' }}>{t('loadingAnalyticsConfig') || 'Loading analytics configuration...'}</div>;
+  if (error) return <div style={{ color: '#dc2626', padding: '1rem' }}>{t('error') || 'Error'}: {error}</div>;
 
   return (
-    <DashboardLayout>
-      <h1 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>{t('analyticsDashboard') || 'Analytics Dashboard'}</h1>
-      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid #e5e7eb', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-        {[
-          { id: 'operational', label: t('operational') || 'Operational', icon: faChartLine },
-          { id: 'financial', label: t('financial') || 'Financial', icon: faMoneyBillWave },
-          { id: 'inventory', label: t('inventory') || 'Inventory', icon: faBoxes },
-          { id: 'workforce', label: t('workforce') || 'Workforce', icon: faUsers },
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              padding: '0.5rem 1rem',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontWeight: activeTab === tab.id ? 'bold' : 'normal',
-              borderBottom: activeTab === tab.id ? '2px solid #f59e0b' : 'none',
-              color: activeTab === tab.id ? '#f59e0b' : '#4b5563',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-            }}
+    <div>
+      <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+        <FontAwesomeIcon icon={faChartLine} /> {t('analyticsConfiguration') || 'Analytics Configuration'}
+      </h3>
+      <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
+        Configure how analytics data is displayed, cached, and refreshed across the dashboard.
+      </p>
+
+      {message && (
+        <div style={{ marginBottom: '1rem', padding: '12px', background: '#d1fae5', borderRadius: '8px', color: '#065f46' }}>
+          <FontAwesomeIcon icon={faSave} /> {message}
+        </div>
+      )}
+
+      <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', marginTop: '1rem' }}>
+        
+        {/* Default Date Range */}
+        <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '1rem' }}>
+          <label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem' }}>
+            <FontAwesomeIcon icon={faCalendarAlt} style={{ marginRight: '0.5rem', color: '#f59e0b' }} />
+            {t('defaultDateRange') || 'Default Date Range'}
+          </label>
+          <select
+            value={getValue('analytics_default_range')}
+            onChange={(e) => updateConfig('analytics_default_range', e.target.value)}
+            disabled={!canEdit || saving}
+            style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px' }}
           >
-            <FontAwesomeIcon icon={tab.icon} />
-            {tab.label}
-          </button>
-        ))}
+            <option value="last_7_days">{t('last7Days') || 'Last 7 days'}</option>
+            <option value="last_30_days">{t('last30Days') || 'Last 30 days'}</option>
+            <option value="this_month">{t('thisMonth') || 'This month'}</option>
+            <option value="this_year">{t('thisYear') || 'This year'}</option>
+          </select>
+          <small style={{ color: '#6b7280', display: 'block', marginTop: '0.25rem' }}>
+            Default date range for all analytics charts
+          </small>
+        </div>
+
+        {/* Chart Refresh Interval */}
+        <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '1rem' }}>
+          <label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem' }}>
+            <FontAwesomeIcon icon={faRefresh} style={{ marginRight: '0.5rem', color: '#f59e0b' }} />
+            {t('chartRefreshInterval') || 'Chart Refresh Interval (seconds)'}
+          </label>
+          <select
+            value={getValue('analytics_refresh_interval')}
+            onChange={(e) => updateConfig('analytics_refresh_interval', e.target.value)}
+            disabled={!canEdit || saving}
+            style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px' }}
+          >
+            <option value="60">{t('seconds60') || '60 seconds'}</option>
+            <option value="300">{t('minutes5') || '5 minutes'}</option>
+            <option value="600">{t('minutes10') || '10 minutes'}</option>
+            <option value="3600">{t('hour1') || '1 hour'}</option>
+          </select>
+          <small style={{ color: '#6b7280', display: 'block', marginTop: '0.25rem' }}>
+            How often charts automatically refresh with new data
+          </small>
+        </div>
+
+        {/* Default Analytics Tab */}
+        <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '1rem' }}>
+          <label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem' }}>
+            <FontAwesomeIcon icon={faChartBar} style={{ marginRight: '0.5rem', color: '#f59e0b' }} />
+            {t('defaultAnalyticsTab') || 'Default Analytics Tab'}
+          </label>
+          <select
+            value={getValue('analytics_default_tab')}
+            onChange={(e) => updateConfig('analytics_default_tab', e.target.value)}
+            disabled={!canEdit || saving}
+            style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px' }}
+          >
+            <option value="operational">{t('operational') || 'Operational'}</option>
+            <option value="financial">{t('financial') || 'Financial'}</option>
+            <option value="inventory">{t('inventory') || 'Inventory'}</option>
+            <option value="workforce">{t('workforce') || 'Workforce'}</option>
+          </select>
+          <small style={{ color: '#6b7280', display: 'block', marginTop: '0.25rem' }}>
+            First tab shown when opening Analytics dashboard
+          </small>
+        </div>
+
+        {/* Enable Caching */}
+        <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '1rem' }}>
+          <label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem' }}>
+            <FontAwesomeIcon icon={faDatabase} style={{ marginRight: '0.5rem', color: '#f59e0b' }} />
+            {t('enableCaching') || 'Enable Caching'}
+          </label>
+          <select
+            value={getValue('analytics_caching_enabled')}
+            onChange={(e) => updateConfig('analytics_caching_enabled', e.target.value)}
+            disabled={!canEdit || saving}
+            style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px' }}
+          >
+            <option value="true">{t('enabled') || 'Enabled'}</option>
+            <option value="false">{t('disabled') || 'Disabled'}</option>
+          </select>
+          <small style={{ color: '#6b7280', display: 'block', marginTop: '0.25rem' }}>
+            Cache analytics data to improve performance
+          </small>
+        </div>
+
+        {/* Cache Duration */}
+        <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '1rem' }}>
+          <label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem' }}>
+            <FontAwesomeIcon icon={faClock} style={{ marginRight: '0.5rem', color: '#f59e0b' }} />
+            {t('cacheDuration') || 'Cache Duration (minutes)'}
+          </label>
+          <input
+            type="number"
+            value={getValue('analytics_cache_minutes')}
+            onChange={(e) => updateConfig('analytics_cache_minutes', e.target.value)}
+            disabled={!canEdit || saving}
+            style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px' }}
+          />
+          <small style={{ color: '#6b7280', display: 'block', marginTop: '0.25rem' }}>
+            How long to cache analytics data (only applies when caching is enabled)
+          </small>
+        </div>
+
+        {/* Top Products Limit */}
+        <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '1rem' }}>
+          <label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem' }}>
+            <FontAwesomeIcon icon={faChartSimple} style={{ marginRight: '0.5rem', color: '#f59e0b' }} />
+            {t('topProductsLimit') || 'Top Products Limit'}
+          </label>
+          <input
+            type="number"
+            value={getValue('analytics_top_products_limit')}
+            onChange={(e) => updateConfig('analytics_top_products_limit', e.target.value)}
+            disabled={!canEdit || saving}
+            style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px' }}
+          />
+          <small style={{ color: '#6b7280', display: 'block', marginTop: '0.25rem' }}>
+            Number of products to show in top selling charts
+          </small>
+        </div>
+
+        {/* Chart Type Preference */}
+        <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '1rem' }}>
+          <label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem' }}>
+            <FontAwesomeIcon icon={faChartBar} style={{ marginRight: '0.5rem', color: '#f59e0b' }} />
+            {t('chartType') || 'Default Chart Type'}
+          </label>
+          <select
+            value={getValue('analytics_default_chart_type')}
+            onChange={(e) => updateConfig('analytics_default_chart_type', e.target.value)}
+            disabled={!canEdit || saving}
+            style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px' }}
+          >
+            <option value="line">{t('lineChart') || 'Line Chart'}</option>
+            <option value="bar">{t('barChart') || 'Bar Chart'}</option>
+            <option value="pie">{t('pieChart') || 'Pie Chart'}</option>
+          </select>
+          <small style={{ color: '#6b7280', display: 'block', marginTop: '0.25rem' }}>
+            Preferred chart type for revenue and sales data
+          </small>
+        </div>
+
+        {/* Enable Real-time Updates */}
+        <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '1rem' }}>
+          <label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem' }}>
+            <FontAwesomeIcon icon={faRefresh} style={{ marginRight: '0.5rem', color: '#f59e0b' }} />
+            {t('enableRealTime') || 'Enable Real-time Updates'}
+          </label>
+          <select
+            value={getValue('analytics_realtime_enabled')}
+            onChange={(e) => updateConfig('analytics_realtime_enabled', e.target.value)}
+            disabled={!canEdit || saving}
+            style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px' }}
+          >
+            <option value="true">{t('enabled') || 'Enabled'}</option>
+            <option value="false">{t('disabled') || 'Disabled'}</option>
+          </select>
+          <small style={{ color: '#6b7280', display: 'block', marginTop: '0.25rem' }}>
+            Automatically update charts when new data is available
+          </small>
+        </div>
+
+        {/* Enable Predictive Analytics */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label style={{ display: 'block', fontWeight: '500', marginBottom: '0.5rem' }}>
+            <FontAwesomeIcon icon={faChartArea} style={{ marginRight: '0.5rem', color: '#f59e0b' }} />
+            {t('enablePredictiveAnalytics') || 'Enable Predictive Analytics'}
+          </label>
+          <select
+            value={getValue('analytics_predictive_enabled')}
+            onChange={(e) => updateConfig('analytics_predictive_enabled', e.target.value)}
+            disabled={!canEdit || saving}
+            style={{ width: '100%', padding: '10px', border: '1px solid #d1d5db', borderRadius: '8px' }}
+          >
+            <option value="true">{t('enabled') || 'Enabled'}</option>
+            <option value="false">{t('disabled') || 'Disabled'}</option>
+          </select>
+          <small style={{ color: '#6b7280', display: 'block', marginTop: '0.25rem' }}>
+            Show trend predictions based on historical data
+          </small>
+        </div>
+
+        {saving && (
+          <div style={{ marginTop: '1rem', fontSize: '0.8rem', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <FontAwesomeIcon icon={faSave} spin /> {t('saving') || 'Saving configuration...'}
+          </div>
+        )}
       </div>
-      {activeTab === 'operational' && renderOperational()}
-      {activeTab === 'financial' && renderFinancial()}
-      {activeTab === 'inventory' && renderInventory()}
-      {activeTab === 'workforce' && renderWorkforce()}
-    </DashboardLayout>
+    </div>
   );
 }

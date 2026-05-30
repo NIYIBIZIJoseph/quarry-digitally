@@ -5,7 +5,7 @@ import { useRouter } from "next/router";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/data/translations";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGlobe, faBars, faTimes } from "@fortawesome/free-solid-svg-icons";
+import { faGlobe, faBars, faTimes, faSearchPlus } from "@fortawesome/free-solid-svg-icons";
 
 export default function PublicHeader() {
   const { locale, setLocale } = useLanguage();
@@ -31,8 +31,80 @@ export default function PublicHeader() {
 
   const currentPath = router.asPath.split('?')[0].split('#')[0];
 
+  // Add CSS for image hover effect and larger text
+  useEffect(() => {
+    // Add global styles for image hover effect
+    const style = document.createElement('style');
+    style.textContent = `
+      /* Image hover overlay effect */
+      .image-container {
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+      }
+      .image-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+      }
+      .image-container:hover img {
+        transform: scale(1.05);
+      }
+      .image-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(245, 158, 11, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+      .image-container:hover .image-overlay {
+        opacity: 1;
+      }
+      .zoom-icon {
+        background-color: rgba(8, 8, 8, 0.5);
+        border-radius: 50%;
+        padding: 12px;
+        color: white;
+        font-size: 1.5rem;
+        transition: transform 0.2s ease;
+      }
+      .image-container:hover .zoom-icon {
+        transform: scale(1.1);
+      }
+      
+      /* Larger text styles */
+      .public-header .main-nav a,
+      .public-header .main-nav .dropdown > a,
+      .public-header .main-nav .login-btn {
+        font-size: 1rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.3px !important;
+      }
+      .public-header .logo .tagline {
+        font-size: 0.7rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 1px !important;
+      }
+      .public-header .dropdown-content a {
+        font-size: 0.9rem !important;
+        font-weight: 500 !important;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   return (
-    <header className="public-header">
+    <header className="public-header" style={{ backgroundColor: "#0f2b3d" }}>
       <div className="header-row">
         <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menu">
           <FontAwesomeIcon icon={menuOpen ? faTimes : faBars} />

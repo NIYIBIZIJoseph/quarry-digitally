@@ -22,10 +22,12 @@ import {
   faBell,
   faGlobe,
   faEye,
+  faUserShield,
 } from "@fortawesome/free-solid-svg-icons";
 
 import styles from "./DashboardLayout.module.css";
 import DashboardHeader from "./dashboard/DashboardHeader";
+import BackToTop from "@/components/BackToTop";
 import { getUserRoleFromToken, getAuthHeaders } from "@/lib/auth-client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -151,11 +153,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
-  // ✅ UPDATED: Logout redirects to Home page (landing page), not /login
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    // Clear cookie as well
     document.cookie = "token=; path=/; max-age=0";
     router.push("/");
   };
@@ -175,17 +175,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   };
 
-  const navItems = [
-    { href: "/dashboard", label: t('dashboardOverview') || "Overview", icon: faHome, roles: [ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.SUPERVISOR, ROLES.SERVICE_PROVIDER] },
-    { href: "/dashboard/products", label: t('products') || "Products", icon: faBox, roles: [ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.SERVICE_PROVIDER] },
-    { href: "/dashboard/orders", label: t('orders') || "Orders", icon: faShoppingCart, roles: [ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.SERVICE_PROVIDER] },
-    { href: "/dashboard/inventory", label: t('inventory') || "Inventory", icon: faWarehouse, roles: [ROLES.SUPERADMIN, ROLES.ADMIN] },
-    { href: "/dashboard/workers", label: t('workers') || "Workers", icon: faUsers, roles: [ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.SUPERVISOR] },
-    { href: "/dashboard/attendance/weekly", label: t('attendance') || "Attendance", icon: faCalendarAlt, roles: [ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.SUPERVISOR] },
-    { href: "/dashboard/analytics", label: t('analytics') || "Analytics", icon: faChartLine, roles: [ROLES.SUPERADMIN, ROLES.ADMIN] },
-    { href: "/dashboard/support", label: t('support') || "Support", icon: faComments, roles: [ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.SERVICE_PROVIDER] },
-    { href: "/dashboard/settings", label: t('settings') || "Settings", icon: faCog, roles: [ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.SUPERVISOR, ROLES.SERVICE_PROVIDER] },
-  ];
+ const navItems = [
+  // Overview - Everyone
+  { href: "/dashboard", label: t('dashboardOverview') || "Overview", icon: faHome, roles: [ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.SUPERVISOR, ROLES.SERVICE_PROVIDER] },
+  
+  // Products - Only Admin and Super Admin
+  { href: "/dashboard/products", label: t('products') || "Products", icon: faBox, roles: [ROLES.SUPERADMIN, ROLES.ADMIN] },
+  
+  // Orders - Only Admin and Super Admin
+  { href: "/dashboard/orders", label: t('orders') || "Orders", icon: faShoppingCart, roles: [ROLES.SUPERADMIN, ROLES.ADMIN] },
+  
+  // Inventory - Only Admin and Super Admin
+  { href: "/dashboard/inventory", label: t('inventory') || "Inventory", icon: faWarehouse, roles: [ROLES.SUPERADMIN, ROLES.ADMIN] },
+  
+  // Workers - Admin, Super Admin, Supervisor
+  { href: "/dashboard/workers", label: t('workers') || "Workers", icon: faUsers, roles: [ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.SUPERVISOR] },
+  
+  // Attendance - Admin, Super Admin, Supervisor
+  { href: "/dashboard/attendance/weekly", label: t('attendance') || "Attendance", icon: faCalendarAlt, roles: [ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.SUPERVISOR] },
+  
+  // Analytics - Only Admin and Super Admin
+  { href: "/dashboard/analytics", label: t('analytics') || "Analytics", icon: faChartLine, roles: [ROLES.SUPERADMIN, ROLES.ADMIN] },
+  
+  // Support - Everyone
+  { href: "/dashboard/support", label: t('support') || "Support", icon: faComments, roles: [ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.SUPERVISOR, ROLES.SERVICE_PROVIDER] },
+  
+  // Settings - Everyone (role-based tabs inside settings page)
+  { href: "/dashboard/settings", label: t('settings') || "Settings", icon: faCog, roles: [ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.SUPERVISOR, ROLES.SERVICE_PROVIDER] },
+  
+  // User Management - Only Admin and Super Admin
+  { href: "/dashboard/admin/users", label: t('user_management') || "User Management", icon: faUserShield, roles: [ROLES.SUPERADMIN, ROLES.ADMIN] },
+];
 
   const visibleNavItems = navItems.filter(item =>
     userRole !== null && item.roles.includes(userRole)
@@ -226,7 +246,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main content */}
       <main className={styles.main} style={{ marginLeft: isMobile ? 0 : sidebarWidth }}>
         {/* Header */}
-        <div className={styles.header}>
+        <div className={`${styles.header} ${styles.stickyHeader}`}>
           <div className={styles.headerLeft}>
             {!isMobile && (
               <button onClick={() => setSidebarOpen(!sidebarOpen)} className={styles.collapseButton}>
@@ -315,6 +335,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className={styles.content}>
           {children}
         </div>
+        
+        {/* Back to Top Button */}
+        <BackToTop />
       </main>
 
       {/* Logout confirmation modal */}

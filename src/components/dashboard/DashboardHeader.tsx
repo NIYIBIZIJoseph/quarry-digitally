@@ -1,3 +1,4 @@
+// DashboardHeader.tsx - no changes needed, it's fine
 import { useEffect, useState } from 'react';
 import { getAuthHeaders } from '@/lib/auth-client';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -16,11 +17,9 @@ export default function DashboardHeader() {
   const [mounted, setMounted] = useState(false);
   const [dataLoaded, setDataLoaded] = useState(false);
 
-  // Only run once on mount
   useEffect(() => {
     setMounted(true);
     
-    // Read from localStorage first
     try {
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
@@ -34,7 +33,6 @@ export default function DashboardHeader() {
       console.error('Error reading user from localStorage:', e);
     }
     
-    // Then fetch from API
     const fetchUserProfile = async () => {
       try {
         const res = await fetch('/api/user/profile', { headers: getAuthHeaders() });
@@ -53,10 +51,8 @@ export default function DashboardHeader() {
     };
     
     fetchUserProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array - runs only once
+  }, []);
 
-  // Date/time update - runs every minute
   useEffect(() => {
     if (!mounted) return;
     
@@ -91,7 +87,7 @@ export default function DashboardHeader() {
   };
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
       <div>
         <h1 style={{ fontSize: '1.5rem', margin: 0 }}>
           {getGreetingText()}, {displayName}

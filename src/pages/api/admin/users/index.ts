@@ -24,12 +24,15 @@ export default withAuth(async (
 
     const { status, role, search } = req.query;
 
+    // ✅ FIXED: Added LEFT JOIN branches to get branch_name
     let query = `
       SELECT u.id, u.phone, u.full_name,
              r.name as role, u.status,
-             u.created_at, u.branch_id
+             u.created_at, u.branch_id,
+             b.name as branch_name
       FROM users u
       LEFT JOIN roles r ON u.role_id = r.id
+      LEFT JOIN branches b ON u.branch_id = b.id
       WHERE u.deleted_at IS NULL
     `;
 

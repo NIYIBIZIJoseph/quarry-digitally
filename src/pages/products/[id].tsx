@@ -5,14 +5,62 @@ import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/data/translations";
 import PublicHeader from "@/components/PublicHeader";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSearchPlus } from "@fortawesome/free-solid-svg-icons";
+
+// Image Modal Component
+function ImageModal({ imageUrl, alt, onClose }: { imageUrl: string; alt: string; onClose: () => void }) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0,0,0,0.9)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 10000,
+        cursor: "pointer",
+      }}
+      onClick={onClose}
+    >
+      <div style={{ maxWidth: "90vw", maxHeight: "90vh" }}>
+        <img src={imageUrl} alt={alt} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+        <button
+          onClick={onClose}
+          style={{
+            position: "absolute",
+            top: "20px",
+            right: "20px",
+            backgroundColor: "white",
+            border: "none",
+            borderRadius: "50%",
+            width: "40px",
+            height: "40px",
+            fontSize: "20px",
+            cursor: "pointer",
+          }}
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function ProductDetail() {
   const { locale, setLocale } = useLanguage();
   const t = translations[locale as keyof typeof translations];
   const router = useRouter();
   const { id } = router.query;
+  const [modalImage, setModalImage] = useState<string | null>(null);
+  const [modalAlt, setModalAlt] = useState<string>("");
+  const [isImageHovered, setIsImageHovered] = useState(false);
 
-  // Static product data (from your original file)
+  // Static product data
   const productImageMap: Record<string, string> = {
     sand: "/products/product2.jpg",
     "fine-sand": "/products/product3.jpg",
@@ -38,11 +86,16 @@ export default function ProductDetail() {
   const product = productDetails[id as string];
   const productImage = productImageMap[id as string];
 
+  const openModal = (imageUrl: string, alt: string) => {
+    setModalImage(imageUrl);
+    setModalAlt(alt);
+  };
+
   if (!product && router.isReady) {
     return (
       <div>
         <PublicHeader />
-        <div style={{ padding: "4rem", textAlign: "center" }}>Product not found</div>
+        <div style={{ padding: "4rem", textAlign: "center", fontSize: "1.2rem" }}>Product not found</div>
       </div>
     );
   }
@@ -56,20 +109,74 @@ export default function ProductDetail() {
     <div>
       <PublicHeader />
 
+      {/* Image Modal */}
+      {modalImage && (
+        <ImageModal imageUrl={modalImage} alt={modalAlt} onClose={() => setModalImage(null)} />
+      )}
+
       {/* ========== PRODUCT DETAIL ========== */}
       <section style={detailSectionStyle}>
         <div style={containerStyle}>
           <Link href="/products" style={backButtonStyle}>← {t.backToProducts}</Link>
           <div style={detailCardStyle}>
-            <img
-              src={productImage}
-              alt={title}
-              style={detailImageStyle}
-              onError={(e) => {
-                e.currentTarget.src = "/products/placeholder.jpg";
-                e.currentTarget.onerror = null;
+            <div
+              style={{
+                position: "relative",
+                overflow: "hidden",
+                cursor: "pointer",
+                borderRadius: "12px",
+                marginBottom: "1.5rem",
               }}
-            />
+              onMouseEnter={() => setIsImageHovered(true)}
+              onMouseLeave={() => setIsImageHovered(false)}
+              onClick={() => openModal(productImage, title)}
+            >
+              <img
+                src={productImage}
+                alt={title}
+                style={{
+                  width: "100%",
+                  maxWidth: "400px",
+                  borderRadius: "8px",
+                  objectFit: "cover",
+                  transition: "transform 0.3s ease",
+                  transform: isImageHovered ? "scale(1.05)" : "scale(1)",
+                }}
+                onError={(e) => {
+                  e.currentTarget.src = "/products/placeholder.jpg";
+                  e.currentTarget.onerror = null;
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "100%",
+                  backgroundColor: "rgba(245, 158, 11, 0.7)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: isImageHovered ? 1 : 0,
+                  transition: "opacity 0.3s ease",
+                }}
+              >
+                <div
+                  style={{
+                    backgroundColor: "rgba(0, 0, 0, 0.5)",
+                    borderRadius: "50%",
+                    padding: "12px",
+                    color: "white",
+                    fontSize: "1.5rem",
+                    transition: "transform 0.2s ease",
+                    transform: isImageHovered ? "scale(1.1)" : "scale(1)",
+                  }}
+                >
+                  <FontAwesomeIcon icon={faSearchPlus} />
+                </div>
+              </div>
+            </div>
             <h1 style={detailTitleStyle}>{title}</h1>
             <p style={detailDescStyle}>{desc}</p>
             <div style={detailFullDescStyle}>
@@ -126,7 +233,7 @@ export default function ProductDetail() {
   );
 }
 
-// ========== STYLE CONSTANTS (same as original detail styles) ==========
+// ========== STYLES ==========
 const detailSectionStyle: React.CSSProperties = {
   padding: "4rem 2rem",
   backgroundColor: "white",
@@ -143,6 +250,7 @@ const backButtonStyle: React.CSSProperties = {
   color: "#f59e0b",
   textDecoration: "none",
   fontWeight: "500",
+  fontSize: "1rem",
 };
 const detailCardStyle: React.CSSProperties = {
   backgroundColor: "#f9fafb",
@@ -154,27 +262,21 @@ const detailCardStyle: React.CSSProperties = {
   alignItems: "center",
   textAlign: "center",
 };
-const detailImageStyle: React.CSSProperties = {
-  width: "100%",
-  maxWidth: "400px",
-  borderRadius: "8px",
-  marginBottom: "1.5rem",
-  objectFit: "cover",
-};
 const detailTitleStyle: React.CSSProperties = {
   fontSize: "2rem",
   marginBottom: "1rem",
   color: "#1f2937",
+  fontWeight: "700",
 };
 const detailDescStyle: React.CSSProperties = {
-  fontSize: "1rem",
+  fontSize: "1.1rem",
   color: "#4b5563",
   marginBottom: "1rem",
 };
 const detailFullDescStyle: React.CSSProperties = {
   fontSize: "1rem",
   color: "#6b7280",
-  lineHeight: "1.6",
+  lineHeight: "1.7",
   marginBottom: "1.5rem",
   maxWidth: "800px",
   textAlign: "left",
@@ -187,6 +289,7 @@ const ctaButtonStyle: React.CSSProperties = {
   textDecoration: "none",
   fontWeight: "bold",
   display: "inline-block",
+  fontSize: "1rem",
 };
 const threeColumnSectionStyle: React.CSSProperties = {
   padding: "4rem 2rem",
@@ -208,15 +311,16 @@ const servicesListSingleStyle: React.CSSProperties = {
 };
 const serviceItemStyle: React.CSSProperties = {
   marginBottom: "0.5rem",
-  fontSize: "0.9rem",
+  fontSize: "1rem",
   color: "#f9fafd",
 };
 const columnHeadingStyle: React.CSSProperties = {
-  fontSize: "1.5rem",
+  fontSize: "1.6rem",
   marginBottom: "1rem",
   color: "#1f2937",
   borderLeft: "4px solid #f59e0b",
   paddingLeft: "0.75rem",
+  fontWeight: "700",
 };
 const environmentalColumnStyle: React.CSSProperties = { textAlign: "center" };
 const logoWrapperStyle: React.CSSProperties = {
@@ -225,13 +329,13 @@ const logoWrapperStyle: React.CSSProperties = {
   justifyContent: "center",
 };
 const environmentalHeadingStyle: React.CSSProperties = {
-  fontSize: "1.2rem",
+  fontSize: "1.3rem",
   marginBottom: "0.75rem",
   color: "#f6f7f9",
   fontWeight: "600",
 };
 const environmentalTextStyle: React.CSSProperties = {
-  fontSize: "0.9rem",
+  fontSize: "1rem",
   lineHeight: "1.5",
   color: "#f7f8f9",
 };
@@ -242,8 +346,8 @@ const contactColumnStyle: React.CSSProperties = {
 const contactAddressStyle: React.CSSProperties = {
   fontStyle: "normal",
   color: "#fbfcfe",
-  fontSize: "0.9rem",
-  lineHeight: "1.5",
+  fontSize: "1rem",
+  lineHeight: "1.6",
 };
 const footerStyle: React.CSSProperties = {
   backgroundColor: "#1f2937",
@@ -255,4 +359,5 @@ const footerStyle: React.CSSProperties = {
 const footerContainerStyle: React.CSSProperties = {
   maxWidth: "1200px",
   margin: "0 auto",
+  fontSize: "0.9rem",
 };

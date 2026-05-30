@@ -97,17 +97,19 @@
   transition: opacity 0.2s;
 }
 
-/* MAIN CONTENT */
+/* MAIN CONTENT - important for sticky header */
 .main {
   flex: 1;
   transition: margin-left 0.3s ease;
   padding: 1rem;
   width: 100%;
-  overflow: auto;
-  height: 100vh;
+  min-height: 100vh;
+  background-color: #f9fafb;
+  overflow-x: hidden;
+  position: relative;
 }
 
-/* HEADER – sticky */
+/* HEADER - MAKE IT STICKY PROPERLY */
 .header {
   background-color: white;
   padding: 0.75rem 1.5rem;
@@ -117,12 +119,26 @@
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  /* Add these to ensure it stays on top */
+  width: 100%;
+  backdrop-filter: blur(0px);
 }
 
+/* Optional: Add a slight gap when header is sticky to avoid content jumping */
 .stickyHeader {
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 100;
+  background-color: white;
+}
+
+/* Content area - no overflow issues */
+.content {
+  position: relative;
+  z-index: 1;
 }
 
 .headerLeft {
@@ -164,6 +180,7 @@
   padding: 8px;
   border-radius: 6px;
   transition: background 0.2s;
+  position: relative;
 }
 
 .iconButton:hover {

@@ -1,0 +1,44 @@
+# Query: from "@/lib/auth"
+# ContextLines: 1
+
+9 results - 8 files
+
+src\lib\branch.ts:
+  1from "@/lib/middleware/requireAuth"
+  2  import { ROLES } from './roles';
+
+src\lib\rbac.ts:
+  1: import type { AuthUser } from "@/lib/auth";
+  2  
+  3  import { hasPermission } from "@/lib/permissions";
+  4: import { isSuperAdmin } from "@/lib/auth";
+  5  
+
+src\lib\middleware\legacyBridge.ts:
+  1: import { verifyToken } from "@/lib/auth";
+  2  import { hasPermission } from "@/lib/permissions";
+
+src\lib\middleware\requireAuth.ts:
+  1  import type { NextApiRequest, NextApiResponse } from "next";
+  2: import { verifyToken, AuthUser } from "@/lib/auth";
+  3  
+
+src\lib\middleware\requirePermission.ts:
+  1  import type { NextApiRequest, NextApiResponse } from "next";
+  2: import type { AuthUser } from "@/lib/auth";
+  3  import { hasPermission } from "@/lib/permissions";
+
+src\lib\middleware\withAuth.ts:
+  1  import type { NextApiRequest, NextApiResponse } from "next";
+  2: import { verifyToken, AuthUser } from "@/lib/auth";
+  3  
+
+src\lib\middleware\withPermission.ts:
+  2  import { hasPermission } from "@/lib/permissions";
+  3: import type { AuthUser } from "@/lib/auth";
+  4  
+
+src\pages\api\admin\users\[id].ts:
+  6  
+  7: import { isSuperAdmin } from "@/lib/auth"; // ✅ FIXED IMPORT
+  8  

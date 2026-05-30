@@ -116,7 +116,6 @@ export default function Analytics() {
   });
 
   const renderOperational = () => {
-    // Check if we have operational data
     if (!operational || operational.error) {
       return (
         <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', textAlign: 'center' }}>
@@ -131,7 +130,6 @@ export default function Analytics() {
     
     return (
       <div>
-        {/* Today's Stats Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px,1fr))', gap: '1rem', marginBottom: '2rem' }}>
           <div style={{ background: 'white', padding: '1rem', borderRadius: '12px', textAlign: 'center', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
             <FontAwesomeIcon icon={faUsers} style={{ fontSize: '1.5rem', color: '#3b82f6', marginBottom: '0.5rem' }} />
@@ -160,7 +158,6 @@ export default function Analytics() {
           </div>
         </div>
 
-        {/* Attendance Trend Chart */}
         {attendanceTrend && attendanceTrend.length > 0 && (
           <div style={{ background: 'white', padding: '1rem', borderRadius: '12px', marginBottom: '2rem' }}>
             <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -177,7 +174,6 @@ export default function Analytics() {
           </div>
         )}
 
-        {/* Worker Ranking */}
         {workerRanking && workerRanking.length > 0 && (
           <div style={{ background: 'white', padding: '1rem', borderRadius: '12px' }}>
             <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -266,7 +262,10 @@ export default function Analytics() {
       );
     }
 
-    const { fastMoving, slowMoving, deadStock, turnoverRate, productSales } = inventory;
+    const { 
+      fastMoving, slowMoving, deadStock, turnoverRate, productSales,
+      fastMovingProducts, slowMovingProducts, deadStockProducts 
+    } = inventory;
 
     return (
       <div>
@@ -293,8 +292,50 @@ export default function Analytics() {
           </div>
         </div>
 
+        {/* Fast Moving Products List */}
+        {fastMovingProducts && fastMovingProducts.length > 0 && (
+          <div style={{ background: '#d1fae5', padding: '1rem', borderRadius: '12px', marginBottom: '1rem' }}>
+            <h4 style={{ marginTop: 0, marginBottom: '0.5rem', color: '#065f46', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <FontAwesomeIcon icon={faTruck} /> Fast-Moving Products (Sold &gt; 50 units)
+            </h4>
+            <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
+              {fastMovingProducts.map((p: any) => (
+                <li key={p.id} style={{ padding: '4px 0' }}>{p.name} - {p.units_sold} units sold (last 30 days)</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Slow Moving Products List */}
+        {slowMovingProducts && slowMovingProducts.length > 0 && (
+          <div style={{ background: '#fef3c7', padding: '1rem', borderRadius: '12px', marginBottom: '1rem' }}>
+            <h4 style={{ marginTop: 0, marginBottom: '0.5rem', color: '#92400e', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <FontAwesomeIcon icon={faClock} /> Slow-Moving Products (Sold 1-50 units)
+            </h4>
+            <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
+              {slowMovingProducts.map((p: any) => (
+                <li key={p.id} style={{ padding: '4px 0' }}>{p.name} - {p.units_sold} units sold (last 30 days)</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Dead Stock Products List */}
+        {deadStockProducts && deadStockProducts.length > 0 && (
+          <div style={{ background: '#fee2e2', padding: '1rem', borderRadius: '12px', marginBottom: '1rem' }}>
+            <h4 style={{ marginTop: 0, marginBottom: '0.5rem', color: '#991b1b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <FontAwesomeIcon icon={faTimesCircle} /> Dead Stock (No sales in 90 days)
+            </h4>
+            <ul style={{ margin: 0, paddingLeft: '1.5rem' }}>
+              {deadStockProducts.map((p: any) => (
+                <li key={p.id} style={{ padding: '4px 0' }}>{p.name} - {p.stock_quantity} units in stock</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {productSales && productSales.length > 0 && (
-          <div style={{ background: 'white', padding: '1rem', borderRadius: '12px' }}>
+          <div style={{ background: 'white', padding: '1rem', borderRadius: '12px', marginTop: '1rem' }}>
             <h3 style={{ marginBottom: '1rem' }}><FontAwesomeIcon icon={faShoppingCart} /> {t('productSales') || 'Product Sales (Last 30 days)'}</h3>
             <Bar data={barChartData(productSales.map((p: any) => p.name), productSales.map((p: any) => p.sold_units), t('unitsSold') || 'Units Sold', '#3b82f6')} />
           </div>

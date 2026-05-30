@@ -5,12 +5,138 @@ import { useRouter } from "next/router";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/data/translations";
 import PublicHeader from "@/components/PublicHeader";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSearchPlus } from "@fortawesome/free-solid-svg-icons";
+
+// Image Modal Component
+function ImageModal({ imageUrl, alt, onClose }: { imageUrl: string; alt: string; onClose: () => void }) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0,0,0,0.9)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 10000,
+        cursor: "pointer",
+      }}
+      onClick={onClose}
+    >
+      <div style={{ maxWidth: "90vw", maxHeight: "90vh" }}>
+        <img src={imageUrl} alt={alt} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+        <button
+          onClick={onClose}
+          style={{
+            position: "absolute",
+            top: "20px",
+            right: "20px",
+            backgroundColor: "white",
+            border: "none",
+            borderRadius: "50%",
+            width: "40px",
+            height: "40px",
+            fontSize: "20px",
+            cursor: "pointer",
+          }}
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Product Item Component with hover state
+function ProductItem({ product, onImageClick, viewDetailsText }: { product: any; onImageClick: (url: string, name: string) => void; viewDetailsText: string }) {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: "1.5rem",
+        marginBottom: "2rem",
+        paddingBottom: "1rem",
+        borderBottom: "1px solid #e5e7eb",
+        alignItems: "center",
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          cursor: "pointer",
+          borderRadius: "8px",
+          width: "120px",
+          height: "120px",
+          flexShrink: 0,
+        }}
+        onClick={() => onImageClick(product.img, product.title)}
+      >
+        <img
+          src={product.img}
+          alt={product.title}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            transition: "transform 0.3s ease",
+            transform: isHovered ? "scale(1.05)" : "scale(1)",
+          }}
+          onError={(e) => { e.currentTarget.src = "/products/placeholder.jpg"; }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(245, 158, 11, 0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            opacity: isHovered ? 1 : 0,
+            transition: "opacity 0.3s ease",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              borderRadius: "50%",
+              padding: "12px",
+              color: "white",
+              fontSize: "1.5rem",
+              transition: "transform 0.2s ease",
+              transform: isHovered ? "scale(1.1)" : "scale(1)",
+            }}
+          >
+            <FontAwesomeIcon icon={faSearchPlus} />
+          </div>
+        </div>
+      </div>
+      <div style={{ flex: 1 }}>
+        <h3 style={{ fontSize: "1.5rem", marginBottom: "0.5rem", color: "#1f2937", fontWeight: "600" }}>{product.title}</h3>
+        <p style={{ fontSize: "1rem", color: "#4b5563", marginBottom: "0.75rem", lineHeight: "1.5" }}>{product.desc}</p>
+        <Link href={`/products/${product.id}`} style={viewDetailsButtonStyle}>{viewDetailsText}</Link>
+      </div>
+    </div>
+  );
+}
 
 export default function ProductsPage() {
   const { locale, setLocale } = useLanguage();
   const t = translations[locale as keyof typeof translations];
   const router = useRouter();
-
+  const [modalImage, setModalImage] = useState<string | null>(null);
+  const [modalAlt, setModalAlt] = useState<string>("");
   const [activeHash, setActiveHash] = useState("");
 
   useEffect(() => {
@@ -37,6 +163,11 @@ export default function ProductsPage() {
     }
   }, []);
 
+  const openModal = (imageUrl: string, alt: string) => {
+    setModalImage(imageUrl);
+    setModalAlt(alt);
+  };
+
   const sandProducts = [
     { id: "sand", title: t.sandTitle, desc: t.sandDesc, img: "/products/product2.jpg" },
     { id: "fine-sand", title: t.fineSandTitle, desc: t.fineSandDesc, img: "/products/product3.jpg" },
@@ -55,6 +186,11 @@ export default function ProductsPage() {
     <div>
       <PublicHeader />
 
+      {/* Image Modal */}
+      {modalImage && (
+        <ImageModal imageUrl={modalImage} alt={modalAlt} onClose={() => setModalImage(null)} />
+      )}
+
       {/* Hero Section */}
       <div style={heroSectionStyle}>
         <div style={heroOverlayStyle}>
@@ -67,9 +203,9 @@ export default function ProductsPage() {
       <section style={threePointsSectionStyle}>
         <div style={containerStyle}>
           <div style={threePointsGridStyle}>
-            <div style={pointCardStyle}><h3>{t.goodPriceTitle}</h3><p>{t.goodPriceDesc}</p></div>
-            <div style={pointCardStyle}><h3>{t.bestQualityTitle}</h3><p>{t.bestQualityDesc}</p></div>
-            <div style={pointCardStyle}><h3>{t.efficientTitle}</h3><p>{t.efficientDesc}</p></div>
+            <div style={pointCardStyle}><h3 style={{ fontSize: "1.3rem", marginBottom: "0.5rem" }}>{t.goodPriceTitle}</h3><p style={{ fontSize: "0.95rem" }}>{t.goodPriceDesc}</p></div>
+            <div style={pointCardStyle}><h3 style={{ fontSize: "1.3rem", marginBottom: "0.5rem" }}>{t.bestQualityTitle}</h3><p style={{ fontSize: "0.95rem" }}>{t.bestQualityDesc}</p></div>
+            <div style={pointCardStyle}><h3 style={{ fontSize: "1.3rem", marginBottom: "0.5rem" }}>{t.efficientTitle}</h3><p style={{ fontSize: "0.95rem" }}>{t.efficientDesc}</p></div>
           </div>
         </div>
       </section>
@@ -80,14 +216,7 @@ export default function ProductsPage() {
           <h2 style={sectionTitleStyle}>{t.sandProductsTitle}</h2>
           <div style={productListStyle}>
             {sandProducts.map((product) => (
-              <div key={product.id} style={productItemStyle}>
-                <img src={product.img} alt={product.title} style={productImageSmallStyle} />
-                <div style={{ flex: 1 }}>
-                  <h3 style={productTitleStyle}>{product.title}</h3>
-                  <p style={productDescStyle}>{product.desc}</p>
-                  <Link href={`/products/${product.id}`} style={viewDetailsButtonStyle}>{t.viewDetails}</Link>
-                </div>
-              </div>
+              <ProductItem key={product.id} product={product} onImageClick={openModal} viewDetailsText={t.viewDetails} />
             ))}
           </div>
           <div style={requestButtonWrapper}>
@@ -102,14 +231,7 @@ export default function ProductsPage() {
           <h2 style={sectionTitleStyle}>{t.quarryProductsTitle}</h2>
           <div style={productListStyle}>
             {quarryProducts.map((product) => (
-              <div key={product.id} style={productItemStyle}>
-                <img src={product.img} alt={product.title} style={productImageSmallStyle} />
-                <div style={{ flex: 1 }}>
-                  <h3 style={productTitleStyle}>{product.title}</h3>
-                  <p style={productDescStyle}>{product.desc}</p>
-                  <Link href={`/products/${product.id}`} style={viewDetailsButtonStyle}>{t.viewDetails}</Link>
-                </div>
-              </div>
+              <ProductItem key={product.id} product={product} onImageClick={openModal} viewDetailsText={t.viewDetails} />
             ))}
           </div>
           <div style={requestButtonWrapper}>
@@ -162,7 +284,7 @@ export default function ProductsPage() {
   );
 }
 
-// Styles
+// ========== STYLES ==========
 const heroSectionStyle: React.CSSProperties = {
   height: "400px",
   backgroundImage: "url('/products/product2.jpg')",
@@ -236,36 +358,12 @@ const productListStyle: React.CSSProperties = {
   maxWidth: "800px",
   margin: "0 auto",
 };
-const productItemStyle: React.CSSProperties = {
-  display: "flex",
-  gap: "1rem",
-  marginBottom: "2rem",
-  paddingBottom: "1rem",
-  borderBottom: "1px solid #e5e7eb",
-  alignItems: "center",
-};
-const productTitleStyle: React.CSSProperties = {
-  fontSize: "1.5rem",
-  marginBottom: "0.5rem",
-  color: "#1f2937",
-};
-const productDescStyle: React.CSSProperties = {
-  fontSize: "1rem",
-  color: "#4b5563",
-  marginBottom: "0.75rem",
-};
-const productImageSmallStyle: React.CSSProperties = {
-  width: "100px",
-  height: "100px",
-  objectFit: "cover",
-  borderRadius: "8px",
-};
 const viewDetailsButtonStyle: React.CSSProperties = {
   display: "inline-block",
   backgroundColor: "transparent",
   color: "#f59e0b",
   border: "2px solid #f59e0b",
-  padding: "0.4rem 1rem",
+  padding: "0.5rem 1.2rem",
   borderRadius: "6px",
   textDecoration: "none",
   fontWeight: "500",
@@ -284,6 +382,7 @@ const requestButtonStyle: React.CSSProperties = {
   textDecoration: "none",
   fontWeight: "bold",
   display: "inline-block",
+  fontSize: "1rem",
 };
 const threeColumnSectionStyle: React.CSSProperties = {
   padding: "4rem 2rem",
@@ -305,15 +404,16 @@ const servicesListSingleStyle: React.CSSProperties = {
 };
 const serviceItemStyle: React.CSSProperties = {
   marginBottom: "0.5rem",
-  fontSize: "0.9rem",
+  fontSize: "1rem",
   color: "#f9fafd",
 };
 const columnHeadingStyle: React.CSSProperties = {
-  fontSize: "1.5rem",
+  fontSize: "1.6rem",
   marginBottom: "1rem",
   color: "#1f2937",
   borderLeft: "4px solid #f59e0b",
   paddingLeft: "0.75rem",
+  fontWeight: "700",
 };
 const environmentalColumnStyle: React.CSSProperties = { textAlign: "center" };
 const logoWrapperStyle: React.CSSProperties = {
@@ -322,13 +422,13 @@ const logoWrapperStyle: React.CSSProperties = {
   justifyContent: "center",
 };
 const environmentalHeadingStyle: React.CSSProperties = {
-  fontSize: "1.2rem",
+  fontSize: "1.3rem",
   marginBottom: "0.75rem",
   color: "#f6f7f9",
   fontWeight: "600",
 };
 const environmentalTextStyle: React.CSSProperties = {
-  fontSize: "0.9rem",
+  fontSize: "1rem",
   lineHeight: "1.5",
   color: "#f7f8f9",
 };
@@ -339,8 +439,8 @@ const contactColumnStyle: React.CSSProperties = {
 const contactAddressStyle: React.CSSProperties = {
   fontStyle: "normal",
   color: "#fbfcfe",
-  fontSize: "0.9rem",
-  lineHeight: "1.5",
+  fontSize: "1rem",
+  lineHeight: "1.6",
 };
 const footerStyle: React.CSSProperties = {
   backgroundColor: "#1f2937",
@@ -352,4 +452,5 @@ const footerStyle: React.CSSProperties = {
 const footerContainerStyle: React.CSSProperties = {
   maxWidth: "1200px",
   margin: "0 auto",
+  fontSize: "0.9rem",
 };

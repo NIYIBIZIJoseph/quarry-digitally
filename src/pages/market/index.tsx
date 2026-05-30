@@ -3,6 +3,159 @@ import { useState, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { translations } from "@/data/translations";
 import PublicHeader from "@/components/PublicHeader";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faSearchPlus } from "@fortawesome/free-solid-svg-icons";
+
+// Image Modal Component
+function ImageModal({ imageUrl, alt, onClose }: { imageUrl: string; alt: string; onClose: () => void }) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0,0,0,0.9)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 10000,
+        cursor: "pointer",
+      }}
+      onClick={onClose}
+    >
+      <div style={{ maxWidth: "90vw", maxHeight: "90vh" }}>
+        <img src={imageUrl} alt={alt} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+        <button
+          onClick={onClose}
+          style={{
+            position: "absolute",
+            top: "20px",
+            right: "20px",
+            backgroundColor: "white",
+            border: "none",
+            borderRadius: "50%",
+            width: "40px",
+            height: "40px",
+            fontSize: "20px",
+            cursor: "pointer",
+          }}
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Product Card Component with hover state
+function ProductCard({ product, onImageClick, orderNowText, getStockMessage }: { 
+  product: any; 
+  onImageClick: (url: string, name: string) => void; 
+  orderNowText: string;
+  getStockMessage: (stock: number, reorderLevel: number) => { text: string; color: string };
+}) {
+  const [isHovered, setIsHovered] = useState(false);
+  const stockMsg = getStockMessage(product.stock_quantity, product.reorder_level);
+
+  return (
+    <div
+      style={{
+        backgroundColor: "white",
+        borderRadius: "12px",
+        overflow: "hidden",
+        boxShadow: isHovered ? "0 8px 25px rgba(0,0,0,0.15)" : "0 4px 12px rgba(0,0,0,0.1)",
+        display: "flex",
+        flexDirection: "column",
+        transition: "transform 0.2s, box-shadow 0.2s",
+        transform: isHovered ? "translateY(-5px)" : "translateY(0)",
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          cursor: "pointer",
+          height: "200px",
+        }}
+        onClick={() => onImageClick(product.image_url || "/products/placeholder.jpg", product.name)}
+      >
+        <img
+          src={product.image_url || "/products/placeholder.jpg"}
+          alt={product.name}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            transition: "transform 0.3s ease",
+            transform: isHovered ? "scale(1.05)" : "scale(1)",
+          }}
+          onError={(e) => { e.currentTarget.src = "/products/placeholder.jpg"; }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(245, 158, 11, 0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            opacity: isHovered ? 1 : 0,
+            transition: "opacity 0.3s ease",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              borderRadius: "50%",
+              padding: "12px",
+              color: "white",
+              fontSize: "1.5rem",
+              transition: "transform 0.2s ease",
+              transform: isHovered ? "scale(1.1)" : "scale(1)",
+            }}
+          >
+            <FontAwesomeIcon icon={faSearchPlus} />
+          </div>
+        </div>
+      </div>
+      <div style={{ padding: "1rem", textAlign: "left" }}>
+        <h3 style={{ fontSize: "1.25rem", marginBottom: "0.5rem", color: "#1f2937", fontWeight: "600" }}>{product.name}</h3>
+        <p><strong>Category:</strong> {product.category_name}</p>
+        <p><strong>Price:</strong> {product.price?.toLocaleString()} RWF / m³</p>
+        <p style={{ color: stockMsg.color }}><strong>Availability:</strong> {stockMsg.text}</p>
+        <button
+          onClick={() => {
+            const event = new CustomEvent('openOrderModal', { detail: product });
+            window.dispatchEvent(event);
+          }}
+          style={{
+            backgroundColor: "#f59e0b",
+            color: "#1f2937",
+            border: "none",
+            padding: "0.5rem 1rem",
+            borderRadius: "6px",
+            fontWeight: "bold",
+            cursor: "pointer",
+            marginTop: "0.5rem",
+            width: "100%",
+            transition: "background 0.2s",
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#e67e22"}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#f59e0b"}
+        >
+          {orderNowText}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function MarketHome() {
   const { locale } = useLanguage();
@@ -11,6 +164,8 @@ export default function MarketHome() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeProduct, setActiveProduct] = useState<any>(null);
+  const [modalImage, setModalImage] = useState<string | null>(null);
+  const [modalAlt, setModalAlt] = useState<string>("");
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -35,17 +190,26 @@ export default function MarketHome() {
       });
   }, []);
 
-  const handleOrderClick = (product: any) => {
-    setActiveProduct(product);
-    setFormData({
-      name: "",
-      phone: "",
-      productName: product.name,
-      quantity: "",
-      bargaining: "",
-      location: "",
-      note: "",
-    });
+  useEffect(() => {
+    const handleOpenModal = (e: CustomEvent) => {
+      setActiveProduct(e.detail);
+      setFormData({
+        name: "",
+        phone: "",
+        productName: e.detail.name,
+        quantity: "",
+        bargaining: "",
+        location: "",
+        note: "",
+      });
+    };
+    window.addEventListener('openOrderModal', handleOpenModal as EventListener);
+    return () => window.removeEventListener('openOrderModal', handleOpenModal as EventListener);
+  }, []);
+
+  const openImageModal = (imageUrl: string, alt: string) => {
+    setModalImage(imageUrl);
+    setModalAlt(alt);
   };
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -106,6 +270,11 @@ export default function MarketHome() {
     <div>
       <PublicHeader />
 
+      {/* Image Modal */}
+      {modalImage && (
+        <ImageModal imageUrl={modalImage} alt={modalAlt} onClose={() => setModalImage(null)} />
+      )}
+
       <div style={heroSectionStyle}>
         <div style={heroOverlayStyle}>
           <h1 style={heroHeadingStyle}>{t.marketHeroTitle}</h1>
@@ -130,27 +299,21 @@ export default function MarketHome() {
             <p style={{ textAlign: "center" }}>No products available yet.</p>
           ) : (
             <div style={productsGridStyle}>
-              {products.map((product) => {
-                const stockMsg = getStockMessage(product.stock_quantity, product.reorder_level);
-                return (
-                  <div key={product.id} style={productCardMarketStyle}>
-                    <img src={product.image_url || "/products/placeholder.jpg"} alt={product.name} style={productImageMarketStyle} />
-                    <div style={productInfoStyle}>
-                      <h3 style={productTitleStyle}>{product.name}</h3>
-                      <p><strong>{t.categoryLabel}:</strong> {product.category_name}</p>
-                      <p><strong>Price:</strong> {product.price?.toLocaleString()} RWF / m³</p>
-                      <p style={{ color: stockMsg.color }}><strong>Availability:</strong> {stockMsg.text}</p>
-                      <button onClick={() => handleOrderClick(product)} style={orderButtonStyle}>{t.orderNow}</button>
-                    </div>
-                  </div>
-                );
-              })}
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onImageClick={openImageModal}
+                  orderNowText={t.orderNow}
+                  getStockMessage={getStockMessage}
+                />
+              ))}
             </div>
           )}
         </div>
       </section>
 
-      {/* Fixed Modal - Now appears on top */}
+      {/* Fixed Modal */}
       {activeProduct && (
         <div 
           style={{
@@ -360,11 +523,6 @@ const pointCardStyle: React.CSSProperties = { textAlign: "center", padding: "1.5
 const productsSectionStyle: React.CSSProperties = { padding: "4rem 2rem", backgroundColor: "#f9fafb" };
 const sectionTitleStyle: React.CSSProperties = { fontSize: "2rem", marginBottom: "2rem", color: "#1f2937", textAlign: "center", fontWeight: "700" };
 const productsGridStyle: React.CSSProperties = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: "2rem", marginTop: "2rem" };
-const productCardMarketStyle: React.CSSProperties = { backgroundColor: "white", borderRadius: "12px", overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", display: "flex", flexDirection: "column" };
-const productImageMarketStyle: React.CSSProperties = { width: "100%", height: "200px", objectFit: "cover" };
-const productInfoStyle: React.CSSProperties = { padding: "1rem", textAlign: "left" };
-const productTitleStyle: React.CSSProperties = { fontSize: "1.25rem", marginBottom: "0.5rem", color: "#1f2937", fontWeight: "600" };
-const orderButtonStyle: React.CSSProperties = { backgroundColor: "#f59e0b", color: "#1f2937", border: "none", padding: "0.5rem 1rem", borderRadius: "6px", fontWeight: "bold", cursor: "pointer", marginTop: "0.5rem", width: "100%" };
 const threeColumnSectionStyle: React.CSSProperties = { padding: "4rem 2rem", backgroundColor: "#4d5a67" };
 const threeColumnContainerStyle: React.CSSProperties = { maxWidth: "1200px", margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "2rem", alignItems: "start" };
 const servicesColumnStyle: React.CSSProperties = { textAlign: "left" };

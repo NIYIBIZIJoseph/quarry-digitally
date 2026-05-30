@@ -6,7 +6,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faUser, faKey, faBuilding, faClock, faChartLine, faBoxes,
   faHeadset, faBell, faShieldAlt, faDatabase, faPalette, faCrown,
-  faUsers, faHistory
+  faUsers, faHistory, faSlidersH, faLock, faEnvelope, faPhone,
+  faGlobe, faPaintBrush, faCodeBranch
 } from '@fortawesome/free-solid-svg-icons';
 
 import { useTranslation } from '@/hooks/useTranslation';
@@ -39,27 +40,30 @@ export default function SettingsPage() {
     setUserRole(role || null);
   }, []);
 
-  const tabs = [
-    { id: 'account', label: t('account') || 'Account', icon: faUser, roles: [ROLES.SUPERADMIN, ROLES.ADMIN] },
-    { id: 'roles', label: t('rolesPermissions') || 'Roles & Permissions', icon: faKey, roles: [ROLES.SUPERADMIN] },
-    { id: 'organization', label: t('organization') || 'Organization', icon: faBuilding, roles: [ROLES.SUPERADMIN, ROLES.ADMIN] },
-    { id: 'attendance', label: t('attendanceRules') || 'Attendance Rules', icon: faClock, roles: [ROLES.SUPERADMIN, ROLES.ADMIN] },
-    { id: 'analytics', label: t('analyticsConfig') || 'Analytics', icon: faChartLine, roles: [ROLES.SUPERADMIN, ROLES.ADMIN] },
-    { id: 'inventory', label: t('inventoryConfig') || 'Inventory', icon: faBoxes, roles: [ROLES.SUPERADMIN, ROLES.ADMIN] },
-    { id: 'support', label: t('supportConfig') || 'Support', icon: faHeadset, roles: [ROLES.SUPERADMIN, ROLES.ADMIN] },
-    { id: 'notifications', label: t('notifications') || 'Notifications', icon: faBell, roles: [ROLES.SUPERADMIN, ROLES.ADMIN] },
-    { id: 'security', label: t('security') || 'Security', icon: faShieldAlt, roles: [ROLES.SUPERADMIN, ROLES.ADMIN] },
-    { id: 'data', label: t('dataManagement') || 'Data', icon: faDatabase, roles: [ROLES.SUPERADMIN, ROLES.ADMIN] },
-    { id: 'ui', label: t('uiPreferences') || 'UI', icon: faPalette, roles: [ROLES.SUPERADMIN, ROLES.ADMIN] },
-    { id: 'admin', label: t('adminControls') || 'Admin', icon: faCrown, roles: [ROLES.SUPERADMIN] },
-    { id: 'team', label: t('teamManagement') || 'Team', icon: faUsers, roles: [ROLES.SUPERADMIN, ROLES.ADMIN] },
-    { id: 'audit', label: t('auditLogs') || 'Audit', icon: faHistory, roles: [ROLES.SUPERADMIN, ROLES.ADMIN] },
+  // Define all tabs with their required roles
+  const allTabs = [
+    { id: 'account', label: t('account') || 'Account', icon: faUser, roles: [ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.SUPERVISOR, ROLES.SERVICE_PROVIDER], description: 'Manage your profile, password, and 2FA' },
+    { id: 'roles', label: t('rolesPermissions') || 'Roles & Permissions', icon: faKey, roles: [ROLES.SUPERADMIN], description: 'Manage user roles and permissions' },
+    { id: 'organization', label: t('organization') || 'Organization', icon: faBuilding, roles: [ROLES.SUPERADMIN, ROLES.ADMIN], description: 'Manage branches, departments, and company settings' },
+    { id: 'attendance', label: t('attendanceRules') || 'Attendance Rules', icon: faClock, roles: [ROLES.SUPERADMIN, ROLES.ADMIN], description: 'Configure attendance policies and shift timings' },
+    { id: 'analytics', label: t('analyticsConfig') || 'Analytics Config', icon: faChartLine, roles: [ROLES.SUPERADMIN, ROLES.ADMIN], description: 'Configure analytics dashboard settings' },
+    { id: 'inventory', label: t('inventoryConfig') || 'Inventory Config', icon: faBoxes, roles: [ROLES.SUPERADMIN, ROLES.ADMIN], description: 'Configure inventory management settings' },
+    { id: 'support', label: t('supportConfig') || 'Support Config', icon: faHeadset, roles: [ROLES.SUPERADMIN, ROLES.ADMIN], description: 'Configure support ticket system' },
+    { id: 'notifications', label: t('notifications') || 'Notifications', icon: faBell, roles: [ROLES.SUPERADMIN, ROLES.ADMIN], description: 'Configure email and in-app notifications' },
+    { id: 'security', label: t('security') || 'Security', icon: faShieldAlt, roles: [ROLES.SUPERADMIN, ROLES.ADMIN], description: 'Configure security policies and 2FA' },
+    { id: 'data', label: t('dataManagement') || 'Data Management', icon: faDatabase, roles: [ROLES.SUPERADMIN, ROLES.ADMIN], description: 'Export, purge, and manage database records' },
+    { id: 'ui', label: t('uiPreferences') || 'UI Preferences', icon: faPalette, roles: [ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.SUPERVISOR, ROLES.SERVICE_PROVIDER], description: 'Customize theme, layout, and language' },
+    { id: 'admin', label: t('adminControls') || 'Admin Controls', icon: faCrown, roles: [ROLES.SUPERADMIN], description: 'Maintenance mode, cache, system info' },
+    { id: 'team', label: t('teamManagement') || 'Team Management', icon: faUsers, roles: [ROLES.SUPERADMIN, ROLES.ADMIN], description: 'Manage team members for About Us page' },
+    { id: 'audit', label: t('auditLogs') || 'Audit Logs', icon: faHistory, roles: [ROLES.SUPERADMIN, ROLES.ADMIN], description: 'View system audit logs' },
   ];
 
-  const visibleTabs = tabs.filter(
-    (t) => userRole !== null && t.roles.includes(userRole as any)
+  // Filter tabs based on user role
+  const visibleTabs = allTabs.filter(
+    (tab) => userRole !== null && tab.roles.includes(userRole as any)
   );
 
+  // Set active tab from URL query or first visible tab
   useEffect(() => {
     if (!userRole || visibleTabs.length === 0) return;
 
@@ -93,34 +97,74 @@ export default function SettingsPage() {
       case 'team': return <TeamManagementSettings />;
       case 'audit': return <AuditLogs />;
       default:
-        return <div>Coming soon</div>;
+        return (
+          <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
+            <FontAwesomeIcon icon={faSlidersH} size="2x" style={{ marginBottom: '1rem' }} />
+            <p>Coming soon...</p>
+          </div>
+        );
     }
   };
 
   if (userRole === null) {
-    return <DashboardLayout>Loading...</DashboardLayout>;
+    return (
+      <DashboardLayout>
+        <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>
+      </DashboardLayout>
+    );
   }
 
   return (
     <DashboardLayout>
-      <h1>{t('settings') || 'Settings'}</h1>
+      <div style={{ padding: '0 1rem' }}>
+        <h1 style={{ fontSize: '1.8rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <FontAwesomeIcon icon={faSlidersH} /> {t('settings') || 'Settings'}
+        </h1>
+        <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
+          Manage your system preferences, user roles, and application settings.
+        </p>
 
-      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-        {visibleTabs.map((tabItem) => (
-          <button
-            key={tabItem.id}
-            onClick={() => setActiveTab(tabItem.id)}
-            style={{
-              borderBottom: activeTab === tabItem.id ? '2px solid #f59e0b' : 'none',
-              fontWeight: activeTab === tabItem.id ? 'bold' : 'normal',
-            }}
-          >
-            <FontAwesomeIcon icon={tabItem.icon} /> {tabItem.label}
-          </button>
-        ))}
+        {/* Tabs - Horizontal scroll on mobile */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '8px', 
+          flexWrap: 'wrap', 
+          marginBottom: '2rem',
+          borderBottom: '1px solid #e5e7eb',
+          paddingBottom: '1rem',
+          overflowX: 'auto',
+        }}>
+          {visibleTabs.map((tabItem) => (
+            <button
+              key={tabItem.id}
+              onClick={() => setActiveTab(tabItem.id)}
+              style={{
+                padding: '10px 20px',
+                background: activeTab === tabItem.id ? '#f59e0b' : 'transparent',
+                color: activeTab === tabItem.id ? '#1f2937' : '#4b5563',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: activeTab === tabItem.id ? 'bold' : 'normal',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.2s ease',
+                whiteSpace: 'nowrap',
+              }}
+              title={tabItem.description}
+            >
+              <FontAwesomeIcon icon={tabItem.icon} />
+              {tabItem.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        <div style={{ marginTop: '1rem' }}>
+          {renderTab()}
+        </div>
       </div>
-
-      {renderTab()}
     </DashboardLayout>
   );
 }

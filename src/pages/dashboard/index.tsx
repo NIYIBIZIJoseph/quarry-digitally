@@ -23,7 +23,6 @@ import AttendanceTrendChart from '@/components/dashboard/AnalyticsPanel/Attendan
 import BranchPerformance from '@/components/dashboard/BranchPerformance';
 import PendingApprovals from '@/components/dashboard/PendingApprovals';
 
-// Define ROLES in lowercase to match token
 const ROLES = {
   SUPERADMIN: 'superadmin',
   ADMIN: 'admin',
@@ -37,22 +36,12 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    console.log('Token exists:', !!token);
-    
     if (!token) {
-      console.log('No token, redirecting to login');
       window.location.href = '/login';
       return;
     }
-    
-    // Get role from token
     const role = getUserRoleFromToken();
-    console.log('Role from token:', role);
-    
-    // Convert to lowercase if needed
     const normalizedRole = role ? role.toLowerCase() : null;
-    console.log('Normalized role:', normalizedRole);
-    
     setUserRole(normalizedRole);
     setLoading(false);
   }, []);
@@ -60,9 +49,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div style={{ padding: '2rem', textAlign: 'center' }}>
-          Loading dashboard...
-        </div>
+        <div style={{ padding: '2rem', textAlign: 'center' }}>Loading dashboard...</div>
       </DashboardLayout>
     );
   }
@@ -72,10 +59,7 @@ export default function DashboardPage() {
       <DashboardLayout>
         <div style={{ padding: '2rem', textAlign: 'center' }}>
           Please login to continue.
-          <button 
-            onClick={() => window.location.href = '/login'}
-            style={{ marginLeft: '1rem', padding: '0.5rem 1rem', cursor: 'pointer' }}
-          >
+          <button onClick={() => window.location.href = '/login'} style={{ marginLeft: '1rem', padding: '0.5rem 1rem', cursor: 'pointer' }}>
             Go to Login
           </button>
         </div>
@@ -83,63 +67,85 @@ export default function DashboardPage() {
     );
   }
 
+  // Role-based flags
+  const isSuperAdmin = userRole === ROLES.SUPERADMIN;
+  const isAdmin = userRole === ROLES.ADMIN || isSuperAdmin;
   const isSupervisor = userRole === ROLES.SUPERVISOR;
-  const isAdmin = userRole === ROLES.ADMIN || userRole === ROLES.SUPERADMIN;
-  
-  console.log('User role:', userRole);
-  console.log('isSupervisor:', isSupervisor);
-  console.log('isAdmin:', isAdmin);
+  const isServiceProvider = userRole === ROLES.SERVICE_PROVIDER;
+
+  // Admin can see everything except maybe some superadmin-only features
+  // Supervisor can see Workforce, Attendance, Support
+  // Service Provider can only see Support and limited info
 
   return (
     <DashboardLayout>
       <DashboardHeader />
 
+      {/* AI Summary - Admin only (SuperAdmin and Admin) */}
       {isAdmin && <AISummary />}
 
-      {!isSupervisor && (
+      {/* BUSINESS - Only Admin (SuperAdmin and Admin) */}
+      {isAdmin && (
         <div style={{ marginBottom: '2rem' }}>
           <h2>Business</h2>
           <BusinessKPIs />
         </div>
       )}
 
-      <div style={{ marginBottom: '2rem' }}>
-        <h2>Workforce</h2>
-        <WorkforceKPIs />
-      </div>
+      {/* WORKFORCE - Admin and Supervisor (NOT Service Provider) */}
+      {(isAdmin || isSupervisor) && (
+        <div style={{ marginBottom: '2rem' }}>
+          <h2>Workforce</h2>
+          <WorkforceKPIs />
+        </div>
+      )}
 
-      {!isSupervisor && (
+      {/* INVENTORY - Only Admin (SuperAdmin and Admin) */}
+      {isAdmin && (
         <div style={{ marginBottom: '2rem' }}>
           <h2>Inventory</h2>
           <InventoryKPIs />
         </div>
       )}
 
+      {/* SUPPORT - Everyone */}
       <div style={{ marginBottom: '2rem' }}>
         <h2>Support</h2>
         <SupportKPIs />
       </div>
 
-      <QuickActions />
+      {/* Quick Actions - Only Admin */}
+      {isAdmin && <QuickActions />}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
         <div>
           <RecentActivity />
           <div style={{ marginTop: '1.5rem' }}><AttendanceSnapshot /></div>
-          {!isSupervisor && <div style={{ marginTop: '1.5rem' }}><RecentOrders /></div>}
+          {/* Recent Orders - Only Admin */}
+          {isAdmin && <div style={{ marginTop: '1.5rem' }}><RecentOrders /></div>}
           <div style={{ marginTop: '1.5rem' }}><SupportQueue /></div>
           <div style={{ marginTop: '1.5rem' }}><AlertBar /></div>
         </div>
 
         <div>
+          {/* Revenue Chart - Only Admin */}
           {isAdmin && <RevenueChart />}
+          
+          {/* Order Status Pie - Only Admin */}
           {isAdmin && <div style={{ marginTop: '1.5rem' }}><OrderStatusPie /></div>}
+          
+          {/* Inventory Health Chart - Only Admin */}
           {isAdmin && <div style={{ marginTop: '1.5rem' }}><InventoryHealthChart /></div>}
+          
+          {/* Attendance Trend Chart - Everyone */}
           <div style={{ marginTop: '1.5rem' }}><AttendanceTrendChart /></div>
         </div>
       </div>
 
+      {/* Branch Performance - Only Admin */}
       {isAdmin && <BranchPerformance />}
+      
+      {/* Pending Approvals - Only Admin */}
       {isAdmin && <PendingApprovals />}
     </DashboardLayout>
   );

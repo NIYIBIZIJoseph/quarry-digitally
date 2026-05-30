@@ -326,7 +326,7 @@ export default function OrdersPage() {
             <tbody>
               {filteredOrders.map((order) => (
                 <tr key={order.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                  <td style={{ padding: '12px', fontWeight: '500' }}>#{order.order_number}</td>
+                 <td style={{ padding: '12px', fontWeight: '500' }}>{order.order_number}</td>
                   <td style={{ padding: '12px' }}>
                     <strong>{order.client_name}</strong>
                     {order.branch_name && <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>{order.branch_name}</div>}

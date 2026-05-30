@@ -15,18 +15,24 @@ export default function OrderStatusPie() {
   const { t } = useTranslation();
   const [data, setData] = useState<StatusData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/dashboard/order-status', { headers: getAuthHeaders() })
-      .then(res => res.json())
-      .then(data => {
-        setData(data);
+    const fetchData = async () => {
+      try {
+        const res = await fetch('/api/dashboard/order-status', { headers: getAuthHeaders() });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const result = await res.json();
+        console.log('Order status data:', result);
+        setData(Array.isArray(result) ? result : []);
+      } catch (err: unknown) {
+        console.error('Error fetching order status:', err);
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
         setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
+      }
+    };
+    fetchData();
   }, []);
 
   const getStatusTranslation = (status: string) => {
@@ -51,19 +57,29 @@ export default function OrderStatusPie() {
 
   if (loading) {
     return (
-      <div style={{ background: 'white', padding: '1rem', borderRadius: '12px', textAlign: 'center' }}>
+      <div style={{ background: 'white', padding: '1rem', borderRadius: '12px', textAlign: 'center', minHeight: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {t('loadingChart') || 'Loading chart...'}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ background: 'white', padding: '1rem', borderRadius: '12px', textAlign: 'center', color: '#dc2626', minHeight: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        Error: {error}
       </div>
     );
   }
 
   if (!data || data.length === 0) {
     return (
-      <div style={{ background: 'white', padding: '1rem', borderRadius: '12px', textAlign: 'center', color: '#6b7280' }}>
-        {t('noOrderData') || 'No order data'}
+      <div style={{ background: 'white', padding: '1rem', borderRadius: '12px', textAlign: 'center', color: '#6b7280', minHeight: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {t('noOrderData') || 'No order data available'}
       </div>
     );
   }
+
+  const total = data.reduce((sum, item) => sum + item.count, 0);
 
   const chartData = {
     labels: data.map(item => getStatusTranslation(item.status)),
@@ -72,6 +88,7 @@ export default function OrderStatusPie() {
         data: data.map(item => item.count),
         backgroundColor: data.map(item => getStatusColor(item.status)),
         borderWidth: 0,
+        hoverOffset: 4,
       },
     ],
   };
@@ -82,25 +99,32 @@ export default function OrderStatusPie() {
     plugins: {
       legend: {
         position: 'bottom' as const,
+        labels: {
+          font: { size: 12 },
+          padding: 10,
+        },
       },
       tooltip: {
         callbacks: {
           label: function(context: any) {
             const label = context.label || '';
             const value = context.raw || 0;
-            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-            const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
             return `${label}: ${value} (${percentage}%)`;
           }
         }
-      }
+      },
     },
   };
 
   return (
-    <div style={{ background: 'white', padding: '1rem', borderRadius: '12px' }}>
-      <h4 style={{ marginBottom: '1rem' }}>{t('orderStatusDistribution') || 'Order Status Distribution'}</h4>
-      <Pie data={chartData} options={options} />
+    <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+      <h4 style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: '600' }}>
+        {t('orderStatusDistribution') || 'Order Status Distribution'}
+      </h4>
+      <div style={{ maxWidth: '300px', margin: '0 auto' }}>
+        <Pie data={chartData} options={options} />
+      </div>
     </div>
   );
 }

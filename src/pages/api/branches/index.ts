@@ -35,14 +35,14 @@ export default withAuth(
           });
         }
 
+        // ✅ FIXED: Removed created_at column
         const result =
           await pool.query(
             `
             SELECT
               id,
               name,
-              location,
-              created_at
+              location
             FROM branches
             WHERE deleted_at IS NULL
             ORDER BY name ASC
